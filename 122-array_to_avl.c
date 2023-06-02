@@ -1,23 +1,34 @@
 #include "binary_trees.h"
 
+
 /**
- * array_to_avl - builds an AVL tree from an array
- * @array: pointer to the first element of the array to be converted
- * @size: number of element in the array
- * Return: Pointer to root
+ * array_to_bst - builds a Binary Search Tree from an array
+ *
+ * @array: array of integers, may be unsorted and have repeating values
+ * @size: amount of array members
+ * Return: pointer to head of new BST constructed from array
  */
-
-avl_t *array_to_avl(int *array, size_t size)
+bst_t *array_to_bst(int *array, size_t size)
 {
-	size_t i;
-	avl_t *root = NULL;
+	bst_t *tree = NULL;
+	size_t i, j;
 
-	if (!array || size == 0)
+	if (array == NULL)
 		return (NULL);
 
-	root = avl_insert(&root, array[0]);
-	for (i = 1; i < size; i++)
-		avl_insert(&root, array[i]);
+	for (i = 0; i < size; i++)
+	{
+		/* check if NULL return is for repeat value */
+		if (bst_insert(&tree, array[i]) == NULL)
+		{
+			for (j = 0; j < size && array[j] != array[i]; j++)
+			{}
 
-	return (root);
+			/* not a repeating value, bst_insert failure */
+			if (j == i)
+				return (NULL);
+		}
+	}
+
+	return (tree);
 }
