@@ -1,65 +1,115 @@
 #include "binary_trees.h"
 
 /**
- * bst_insert_recursion - recursively traverses a Binary Search Tree to insert
- * a new value
+ * avl_insert_full - Inserts a value
  *
- * @tree: binary tree node
- * @value: integer to insert in new node
- * Return: pointer to new node, or NULL on failure or value found already
- * found in tree
+ * @tree: pointer to the root
+ * @parent: parent of node
+ * @value: the value
+ * Return: pointer to the new_node node
  */
-bst_t *bst_insert_recursion(bst_t *tree, int value)
+avl_t *avl_insert_full(avl_t *tree, avl_t *parent, int value)
 {
-	bst_t *new = NULL;
+	avl_t *new_node;
 
-	if (tree->n > value)
+	if (tree == NULL)
 	{
-		if (tree->left == NULL)
-		{
-			new = binary_tree_node(tree, value);
-			tree->left = new;
-			return (new);
-		}
-
-		return (bst_insert_recursion(tree->left, value));
+		new_node = binary_tree_node(parent, value);
+		if (parent->n > new_node->n)
+			parent->left = new_node;
+		else
+			parent->right = new_node;
+		return (new_node);
 	}
-
-	if (tree->n < value)
-	{
-		if (tree->right == NULL)
-		{
-			new = binary_tree_node(tree, value);
-			tree->right = new;
-			return (new);
-		}
-
-		return (bst_insert_recursion(tree->right, value));
-	}
-
-	/* (tree->n == value) */
-	return (NULL);
+	else if (value == tree->n)
+		return (NULL);
+	else if (value < tree->n)
+		return (avl_insert_full(tree->left, tree, value));
+	else
+		return (avl_insert_full(tree->right, tree, value));
 }
 
 
 /**
- * bst_insert - inserts a value in a Binary Search Tree
+ * val_balancer - rebalance an AVL tree if needed
  *
- * @tree: binary tree node passed by reference
- * @value: integer to insert in new node
- * Return: pointer to new node, or NULL on failure or value found already
- * found in tree
+ * @root: pointer to the root of the tree
+ * @tree: pointer to the node to be rebalanced
+ * @value: inserted value
+ * Return: 0
  */
-bst_t *bst_insert(bst_t **tree, int value)
-{
-	bst_t *new = NULL;
 
-	if (!tree || !(*tree))
+void val_balancer(avl_t **root, avl_t *tree, int value)
+{
+	int new_balance;
+
+	new_balance = binary_tree_balance(tree);
+	if (new_balance > 1)
 	{
-		new = binary_tree_node(NULL, value);
-		*tree = new;
-		return (new);
+		if (tree->left->n > value)
+		{
+			if (*root == tree)
+				*root = tree->left;
+			binary_tree_rotate_right(tree);
+		}
+		else
+		{
+			if (*root == tree)
+				*root = tree->left->right;
+			binary_tree_rotate_left(tree->left);
+			binary_tree_rotate_right(tree);
+		}
+	}
+	if (new_balance < -1)
+	{
+		if (tree->right->n < value)
+		{
+			if (*root == tree)
+				*root = tree->right;
+			binary_tree_rotate_left(tree);
+		}
+		else
+		{
+			if (*root == tree)
+				*root = tree->right->left;
+			binary_tree_rotate_right(tree->right);
+			binary_tree_rotate_left(tree);
+		}
+	}
+}
+
+
+/**
+ * avl_insert - Insets the value in avl
+ *
+ * @tree: double pointer to root
+ * @value: the value
+ * Return: pointer to the new node
+ */
+avl_t *avl_insert(avl_t **tree, int value)
+{
+	avl_t *new_node, *predecessor;
+
+	if (tree == NULL)
+		return (NULL);
+	if (*tree == NULL)
+	{
+		new_node = binary_tree_node(NULL, value);
+		*tree = new_node;
+		return (new_node);
+	}
+	new_node = avl_insert_full(*tree, NULL, value);
+
+	if (new_node == NULL)
+		return (NULL);
+
+	predecessor = new_node->parent;
+
+	while (predecessor != NULL)
+	{
+		val_balancer(tree, predecessor, value);
+		predecessor = predecessor->parent;
 	}
 
-	return (bst_insert_recursion(*tree, value));
+	return (new_node);
 }
