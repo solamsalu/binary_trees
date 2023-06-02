@@ -1,106 +1,83 @@
 #include "binary_trees.h"
-/**
- * successor - get the next successor i mean the min node in the right subtree
- * @node: tree to check
- * Return: the min value of this tree
- */
-int successor(bst_t *node)
-{
-	int left = 0;
 
-	if (node == NULL)
-	{
-		return (0);
-	}
-	else
-	{
-		left = successor(node->left);
-		if (left == 0)
-		{
-			return (node->n);
-		}
-		return (left);
-	}
+/* free */
+#include <stdlib.h>
 
-}
-/**
- * two_children - function that gets the next successor using the min
- * value in the right subtree, and then replace the node value for
- * this successor
- * @root: node tat has two children
- * Return: the value found
- */
-int two_children(bst_t *root)
-{
-	int new_value = 0;
+#include <stdio.h>
 
-	new_value = successor(root->right);
-	root->n = new_value;
-	return (new_value);
-}
 /**
- *remove_type - function that removes a node depending of its children
- *@root: node to remove
- *Return: 0 if it has no children or other value if it has
+ * bst_find_min - find minimum value in a Binary Search Tree
+ *
+ * @tree: BST root or subtree
+ * Return: node of the tree containing minimum value, or NULL if tree is NULL
  */
-int remove_type(bst_t *root)
+static bst_t *bst_find_min(bst_t *tree)
 {
-	if (!root->left && !root->right)
-	{
-		if (root->parent->right == root)
-			root->parent->right = NULL;
-		else
-			root->parent->left = NULL;
-		free(root);
-		return (0);
-	}
-	else if ((!root->left && root->right) || (!root->right && root->left))
-	{
-		if (!root->left)
-		{
-			if (root->parent->right == root)
-				root->parent->right = root->right;
-			else
-				root->parent->left = root->right;
-			root->right->parent = root->parent;
-		}
-		if (!root->right)
-		{
-			if (root->parent->right == root)
-				root->parent->right = root->left;
-			else
-				root->parent->left = root->left;
-			root->left->parent = root->parent;
-		}
-		free(root);
-		return (0);
-	}
-	else
-		return (two_children(root));
+	bst_t *temp = NULL;
+
+	temp = tree;
+	while (temp && temp->left)
+		temp = temp->left;
+
+	return (temp);
 }
+
+
 /**
- * bst_remove - remove a node from a BST tree
- * @root: root of the tree
- * @value: node with this value to remove
- * Return: the tree changed
+ * bst_remove - removes a node from a Binary Search Tree
+ * notes:
+ * - when a node with two children is removed, it will always be replaced
+ * with its first in-order successor (not predecessor) (first in-order
+ * successor is the right subtree's left-most child)
+ * - this could potentially lead to an unbalanced tree, and some
+ * implementations selectively alternate between in-order successor and
+ * predecessor
+ *
+ * @root: pointer to the root node of tree which will have a node removed
+ * @value: value to remove from tree
+ * Return: new root node of the tree after removing the desired value,
+ * or NULL on failure
  */
 bst_t *bst_remove(bst_t *root, int value)
 {
-	int type = 0;
+	bst_t *temp = NULL;
 
-	if (root == NULL)
+	if (!root)
 		return (NULL);
 	if (value < root->n)
-		bst_remove(root->left, value);
+	{ /* recurse to left subtree */
+		root->left = bst_remove(root->left, value);
+		if (root->left)
+			root->left->parent = root;
+	}
 	else if (value > root->n)
-		bst_remove(root->right, value);
-	else if (value == root->n)
-	{
-		type = remove_type(root);
-		if (type != 0)
-			bst_remove(root->right, type);
+	{ /* recurse to right subtree */
+		root->right = bst_remove(root->right, value);
+		if (root->right)
+			root->right->parent = root;
 	}
 	else
-		return (NULL);
+	{ /* value match, deleting this node */
+		if (root->left == NULL)
+		{ /* right child only, or no children */
+
+			temp = root->right;
+			free(root);
+			return (temp);
+		}
+		else if (root->right == NULL)
+		{ /* left child only */
+			temp = root->left;
+			free(root);
+			return (temp);
+		}
+		/* node with two children: get the in-order successor */
+		temp = bst_find_min(root->right);
+		root->n = temp->n; /* copy the in-order successor's content */
+		/* delete the in-order successor */
+		root->right = bst_remove(root->right, temp->n);
+		if (root->right)
+			root->right->parent = root;
+	}
 	return (root);
 }
