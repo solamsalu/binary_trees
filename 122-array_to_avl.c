@@ -1,13 +1,12 @@
 #include "binary_trees.h"
 
-
 /**
  * array_to_bst - builds a Binary Search Tree from an array
- *
  * @array: array of integers, may be unsorted and have repeating values
  * @size: amount of array members
  * Return: pointer to head of new BST constructed from array
  */
+
 bst_t *array_to_bst(int *array, size_t size)
 {
 	bst_t *tree = NULL;
