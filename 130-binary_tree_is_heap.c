@@ -33,7 +33,6 @@ size_t binary_tree_height(const binary_tree_t *tree)
  * @tree: tree to go through
  * Return: balanced factor
  */
-
 int binary_tree_balance(const binary_tree_t *tree)
 {
 	int right = 0, left = 0, total = 0;
@@ -54,7 +53,6 @@ int binary_tree_balance(const binary_tree_t *tree)
  * @tree: tree to check
  * Return: 0 if is not a perfect or other number that is the level of height
  */
-
 int tree_is_perfect(const binary_tree_t *tree)
 {
 	int l = 0, r = 0;
@@ -82,7 +80,6 @@ int tree_is_perfect(const binary_tree_t *tree)
  * @tree: tree to check
  * Return: 1 is it is or 0 if not
  */
-
 int binary_tree_is_perfect(const binary_tree_t *tree)
 {
 	int result = 0;
@@ -107,7 +104,6 @@ int binary_tree_is_perfect(const binary_tree_t *tree)
  * @tree: tree to check
  * Return: 1 is it is or 0 if not
  */
-
 int binary_tree_is_heap(const binary_tree_t *tree)
 {
 	int bval;
