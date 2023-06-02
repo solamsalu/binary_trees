@@ -1,105 +1,212 @@
 #include "binary_trees.h"
-size_t bts(const binary_tree_t *tree);
-heap_t *heap_nf(heap_t *root, size_t number);
-heap_t *heap_r(heap_t *new, heap_t *parent);
 
 /**
- * heap_insert - heap inserter
- * @tree: double pointer to root
- * @value: the value to store
- * Return: pointer to the created node
+ * enqueue_item_3 - Adds an item to a queue.
+ * @queue_h: A pointer to the queue's head.
+ * @queue_t: A pointer to the queue's tail.
+ * @n: A pointer to the queue's size value.
+ * @item: The item to add to the queue.
  */
-
-heap_t *heap_insert(heap_t **tree, int value)
+void enqueue_item_3(heap_t **queue_h, heap_t **queue_t,
+	int *n, void *item)
 {
-	size_t size;
-	int doswap = 1;
-	heap_t *new, *parent;
+	heap_t *new_node;
+	heap_t *node = (heap_t *)item;
 
-	if (tree == NULL)
-		return (NULL);
-
-	if (*tree == NULL)
+	if ((queue_h != NULL) && (queue_t != NULL))
 	{
-		new = binary_tree_node(NULL, value);
-		*tree = new;
-		return (new);
+		new_node = malloc(sizeof(heap_t));
+		if (new_node == NULL)
+			return;
+		new_node->left = *queue_t;
+		new_node->right = NULL;
+		new_node->n = (node != NULL ? node->n : -1);
+		new_node->parent = node;
+		if (*queue_h == NULL)
+			*queue_h = new_node;
+		if (*queue_t != NULL)
+			(*queue_t)->right = new_node;
+		*queue_t = new_node;
+		if (n != NULL)
+			(*n)++;
 	}
+}
 
-	size = bts(*tree);
-	parent = heap_nf(*tree, (size - 1) / 2);
-	new = binary_tree_node(parent, value);
-	if (size % 2 == 1)
-		parent->left = new;
-	else
-		parent->right = new;
-	if (new == NULL)
-		return (NULL);
+/**
+ * dequeue_item_3 - Removes an item from a queue.
+ * @queue_h: A pointer to the queue's head.
+ * @queue_t: A pointer to the queue's tail.
+ * @n: A pointer to the queue's size value.
+ *
+ * Return: The value of the removed queue.
+ */
+heap_t *dequeue_item_3(heap_t **queue_h,
+	heap_t **queue_t, int *n)
+{
+	heap_t *tmp0;
+	heap_t *tmp1;
+	heap_t *node = NULL;
 
-	while (doswap == 1 && parent != NULL)
+	if ((queue_h != NULL) && (queue_t != NULL))
 	{
-		if (parent->n >= new->n)
-			doswap = 0;
-		else
+		tmp0 = *queue_h;
+		if (tmp0 != NULL)
 		{
-			new = heap_r(new, parent);
-			parent = new->parent;
+			node = tmp0->parent;
+			if (tmp0->right != NULL)
+			{
+				tmp1 = tmp0->right;
+				tmp1->left = NULL;
+				*queue_h = tmp1;
+				free(tmp0);
+			}
+			else
+			{
+				free(tmp0);
+				*queue_h = NULL;
+				*queue_t = NULL;
+			}
+			if (n != NULL)
+				(*n)--;
 		}
 	}
-
-	return (new);
+	return (node);
 }
 
 /**
- * bts - measure the tree
+ * get_insert_position - Gets the next available insertion position \
+ * for a node in a max binary heap tree.
+ * @root: The root of the max binary heap tree.
  *
- * @tree: pointer to root
- * Return: size, otherwise 0
+ * Return: The insertion position, otherwise NULL.
  */
-
-size_t bts(const binary_tree_t *tree)
+heap_t *get_insert_position(const heap_t *root)
 {
-	if (tree == NULL)
-		return (0);
-	return (1 + bts(tree->left) + bts(tree->right));
+	heap_t *head = NULL, *tail = NULL;
+	heap_t *parent_node = NULL, *current = NULL;
+	int n = 0;
+
+	if (root != NULL)
+	{
+		enqueue_item_3(&head, &tail, &n, (void *)root);
+		while (n > 0)
+		{
+			current = head;
+			if (current->parent != NULL)
+			{
+				if (current->parent->left != NULL)
+				{
+					enqueue_item_3(&head, &tail, &n, (void *)(current->parent->left));
+					if (current->parent->right != NULL)
+					{
+						enqueue_item_3(&head, &tail, &n, (void *)(current->parent->right));
+					}
+					else
+					{
+						parent_node = current->parent;
+						break;
+					}
+				}
+				else
+				{
+					parent_node = current->parent;
+					break;
+				}
+			}
+			dequeue_item_3(&head, &tail, &n);
+		}
+		while (n > 0)
+			dequeue_item_3(&head, &tail, &n);
+	}
+	return (parent_node);
 }
 
 /**
- * heap_nf - heap node finder
+ * swap_tree_node_with_parent - Swaps a node in a \
+ * max binary heap tree with its parent.
+ * @node: A pointer to the node's address.
+ * @root: A pointer to the root of the tree.
+ */
+void swap_tree_node_with_parent(heap_t **node, heap_t **root)
+{
+	heap_t *node_copy, *p, *tmp0, *l, *r;
+
+	if ((node != NULL) && ((*node)->parent != NULL) && (root != NULL))
+	{
+		p = (*node)->parent, node_copy = *node, tmp0 = (*node)->parent->parent;
+		l = (*node)->left, r = (*node)->right;
+		if ((*node)->parent->left != *node) /* swap from the right */
+		{
+			if ((tmp0 != NULL) && (tmp0->left == (*node)->parent))
+				tmp0->left = *node;
+			if ((tmp0 != NULL) && (tmp0->right == (*node)->parent))
+				tmp0->right = *node;
+			if ((*node)->parent->left != NULL)
+				(*node)->parent->left->parent = node_copy;
+			(*node)->parent = tmp0, (*node)->left = p->left, (*node)->right = p;
+			p->parent = node_copy, p->left = l, p->right = r;
+		}
+		else /* swap from the left */
+		{
+			if ((tmp0 != NULL) && (tmp0->left == p))
+				tmp0->left = *node;
+			if ((tmp0 != NULL) && (tmp0->right == p))
+				tmp0->right = *node;
+			if ((*node)->parent->right != NULL)
+				(*node)->parent->right->parent = *node;
+			(*node)->parent = tmp0, (*node)->right = p->right, (*node)->left = p;
+			p->parent = node_copy, p->left = l, p->right = r;
+		}
+		if (l != NULL)
+			l->parent = p;
+		if (r != NULL)
+			r->parent = p;
+		if (tmp0 == NULL)
+			*root = node_copy;
+	}
+}
+
+/**
+ * heap_insert - inserts a value in Max Binary Heap.
+ *		 if the address stored in root is NULL,
+ *		 the created node becomes the root node.
+ * @root: a double pointer to the root node of the Heap to insert the value
+ * @value: the value to store in the node to be inserted
  *
- * @root: pointer to the root
- * @number: index of the node to find
- * Return: pointer to the node
+ * Return: a pointer to the created node, or NULL on failure.
  */
-
-heap_t *heap_nf(heap_t *root, size_t number)
+heap_t *heap_insert(heap_t **root, int value)
 {
-	size_t parentn, dir;
+	heap_t *new_node = NULL, *parent = NULL;
 
-	if (number == 0)
-		return (root);
-
-	parentn = (number - 1) / 2;
-	dir = (number - 1) % 2;
-
-	if (dir == 0)
-		return (heap_nf(root, parentn)->left);
-	return (heap_nf(root, parentn)->right);
-}
-
-/**
- * heap_r - heap rebalancer
- * @new: pointer to the new node
- * @parent: pointer to the new parent
- * Return: parent
- */
-
-heap_t *heap_r(heap_t *new, heap_t *parent)
-{
-	int tmp;
-
-	tmp = new->n;
-	new->n = parent->n;
-	parent->n = tmp;
-	return (parent);
+	if (root != NULL)
+	{
+		parent = get_insert_position(*root);
+		new_node = malloc(sizeof(heap_t));
+		if (new_node == NULL)
+			return (new_node);
+		new_node->left = NULL;
+		new_node->right = NULL;
+		new_node->parent = parent;
+		new_node->n = value;
+		if (parent == NULL)
+		{
+			*root = new_node;
+		}
+		else
+		{
+			if (parent->left == NULL)
+				parent->left = new_node;
+			else
+				parent->right = new_node;
+			while (new_node->parent != NULL)
+			{
+				if (new_node->n > new_node->parent->n)
+					swap_tree_node_with_parent(&new_node, root);
+				else
+					break;
+			}
+		}
+	}
+	return (new_node);
 }
